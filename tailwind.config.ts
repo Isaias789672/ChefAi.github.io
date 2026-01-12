@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -55,16 +55,20 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         chef: {
-          dark: "hsl(var(--chef-dark))",
-          darker: "hsl(var(--chef-darker))",
-          light: "hsl(var(--chef-light))",
-          muted: "hsl(var(--chef-muted))",
-          accent: "hsl(var(--chef-accent))",
+          primary: "hsl(var(--chef-primary))",
+          "primary-dark": "hsl(var(--chef-primary-dark))",
+          white: "hsl(var(--chef-white))",
+          bg: "hsl(var(--chef-bg))",
         },
-        nutrition: {
-          protein: "hsl(var(--protein))",
-          carbs: "hsl(var(--carbs))",
-          fats: "hsl(var(--fats))",
+        ingredient: {
+          bg: "hsl(var(--ingredient-bg))",
+          border: "hsl(var(--ingredient-border))",
+          text: "hsl(var(--ingredient-text))",
+        },
+        steps: {
+          bg: "hsl(var(--steps-bg))",
+          border: "hsl(var(--steps-border))",
+          text: "hsl(var(--steps-text))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -78,9 +82,11 @@ export default {
         },
       },
       borderRadius: {
+        "4xl": "2rem",
+        "5xl": "2.5rem",
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
       },
       keyframes: {
         "accordion-down": {

@@ -1,54 +1,74 @@
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
+
+interface LoadingStep {
+  id: string;
+  text: string;
+  status: "pending" | "active" | "completed";
+}
 
 interface LoadingStateProps {
-  message?: string;
-  submessage?: string;
+  steps: LoadingStep[];
+  progress: number;
   className?: string;
 }
 
 export function LoadingState({ 
-  message = "Analisando sua foto...", 
-  submessage = "Nossa IA está identificando os ingredientes",
+  steps,
+  progress,
   className 
 }: LoadingStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center py-16 px-6", className)}>
-      {/* Animated circles */}
-      <div className="relative w-32 h-32 mb-8">
-        <div className="absolute inset-0 rounded-full border-4 border-muted animate-pulse" />
-        <div 
-          className="absolute inset-2 rounded-full border-4 border-t-chef-dark border-r-transparent border-b-transparent border-l-transparent animate-spin"
-          style={{ animationDuration: '1s' }}
-        />
-        <div 
-          className="absolute inset-4 rounded-full border-4 border-b-chef-accent border-r-transparent border-t-transparent border-l-transparent animate-spin"
-          style={{ animationDuration: '1.5s', animationDirection: 'reverse' }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full bg-chef-dark flex items-center justify-center">
-            <span className="text-2xl">🍳</span>
-          </div>
+    <div className={cn("space-y-6", className)}>
+      {/* Progress Bar */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Processando...</span>
+          <span className="font-semibold text-foreground">{Math.round(progress)}%</span>
         </div>
-      </div>
-      
-      <div className="text-center">
-        <p className="font-semibold text-lg text-foreground mb-1">
-          {message}
-        </p>
-        <p className="text-sm text-muted-foreground">{submessage}</p>
+        <Progress value={progress} className="h-2" />
       </div>
 
-      {/* Progress dots */}
-      <div className="mt-8 flex gap-2">
-        {[0, 1, 2].map((i) => (
+      {/* Steps List */}
+      <div className="space-y-3">
+        {steps.map((step, index) => (
           <div
-            key={i}
-            className="w-2 h-2 rounded-full bg-chef-dark"
-            style={{ 
-              animation: 'pulse 1.4s ease-in-out infinite',
-              animationDelay: `${i * 0.2}s`
-            }}
-          />
+            key={step.id}
+            className={cn(
+              "flex items-center gap-4 p-4 bg-card rounded-2xl border transition-all duration-300",
+              step.status === "active" && "border-primary shadow-card",
+              step.status === "completed" && "border-success/30 bg-success/5",
+              step.status === "pending" && "border-border opacity-60"
+            )}
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            {/* Status Icon */}
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+              step.status === "active" && "bg-primary/10",
+              step.status === "completed" && "bg-success/10",
+              step.status === "pending" && "bg-muted"
+            )}>
+              {step.status === "completed" ? (
+                <CheckCircle2 className="w-5 h-5 text-success" />
+              ) : step.status === "active" ? (
+                <Loader2 className="w-5 h-5 text-primary spin-slow" />
+              ) : (
+                <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+              )}
+            </div>
+
+            {/* Text */}
+            <span className={cn(
+              "font-medium transition-colors",
+              step.status === "completed" && "text-success",
+              step.status === "active" && "text-foreground",
+              step.status === "pending" && "text-muted-foreground"
+            )}>
+              {step.text}
+            </span>
+          </div>
         ))}
       </div>
     </div>

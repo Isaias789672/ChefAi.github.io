@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { 
   Refrigerator, 
-  UtensilsCrossed, 
-  CalendarDays, 
+  ChefHat, 
+  Calendar, 
   ShoppingCart,
-  Home
+  Leaf
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FridgeScanner } from "@/components/tabs/FridgeScanner";
@@ -14,9 +14,9 @@ import { ShoppingList } from "@/components/tabs/ShoppingList";
 import { Recipe } from "@/components/ui/RecipeCard";
 
 const tabs = [
-  { id: "home", label: "Home", icon: Home },
   { id: "scanner", label: "Scanner", icon: Refrigerator },
-  { id: "discover", label: "Descobrir", icon: UtensilsCrossed },
+  { id: "discover", label: "Descobrir", icon: ChefHat },
+  { id: "menu", label: "Menu", icon: Calendar },
   { id: "shopping", label: "Compras", icon: ShoppingCart },
 ] as const;
 
@@ -26,47 +26,38 @@ type TabId = typeof tabs[number]["id"];
 const sampleRecipes: Recipe[] = [
   {
     id: "1",
-    name: "Salmão Grelhado",
+    name: "Salmão Grelhado com Legumes",
     time: "30 min",
     difficulty: "Médio",
     servings: 2,
     calories: 550,
-    protein: 35,
-    carbs: 40,
-    fats: 28,
-    ingredients: ["Salmão", "Limão", "Ervas", "Azeite", "Sal"],
-    steps: ["Tempere o salmão", "Grelhe por 8 min cada lado", "Sirva com limão"]
+    ingredients: ["Salmão fresco", "Limão siciliano", "Ervas finas", "Azeite extra virgem", "Sal marinho"],
+    steps: ["Tempere o salmão com sal, ervas e limão", "Grelhe por 8 minutos de cada lado", "Sirva com legumes salteados"]
   },
   {
     id: "2",
-    name: "Panquecas com Frutas",
+    name: "Panquecas Integrais",
     time: "25 min",
     difficulty: "Fácil",
     servings: 4,
     calories: 420,
-    protein: 12,
-    carbs: 65,
-    fats: 14,
-    ingredients: ["Farinha", "Ovos", "Leite", "Frutas", "Mel"],
-    steps: ["Prepare a massa", "Cozinhe as panquecas", "Decore com frutas"]
+    ingredients: ["Farinha integral", "Ovos caipiras", "Leite", "Frutas vermelhas", "Mel orgânico"],
+    steps: ["Misture os ingredientes secos", "Adicione ovos e leite", "Cozinhe em frigideira antiaderente", "Sirva com frutas e mel"]
   },
   {
     id: "3",
-    name: "Bowl de Açaí",
+    name: "Bowl de Açaí Premium",
     time: "10 min",
     difficulty: "Fácil",
     servings: 1,
     calories: 380,
-    protein: 6,
-    carbs: 55,
-    fats: 12,
-    ingredients: ["Açaí", "Banana", "Granola", "Mel", "Frutas"],
-    steps: ["Bata o açaí", "Decore com toppings", "Sirva gelado"]
+    ingredients: ["Polpa de açaí", "Banana congelada", "Granola artesanal", "Mel", "Mix de frutas"],
+    steps: ["Bata o açaí com banana", "Decore com granola e frutas", "Finalize com mel"]
   }
 ];
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [activeTab, setActiveTab] = useState<TabId>("scanner");
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>(sampleRecipes);
 
   const handleAddToMenu = (recipe: Recipe) => {
@@ -81,12 +72,12 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "home":
-        return <WeeklyMenu recipes={savedRecipes} onRemoveRecipe={handleRemoveRecipe} />;
       case "scanner":
         return <FridgeScanner onAddToMenu={handleAddToMenu} />;
       case "discover":
         return <DiscoverDish onAddToMenu={handleAddToMenu} />;
+      case "menu":
+        return <WeeklyMenu recipes={savedRecipes} onRemoveRecipe={handleRemoveRecipe} />;
       case "shopping":
         return <ShoppingList recipes={savedRecipes} />;
       default:
@@ -96,14 +87,65 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border flex-col z-40">
+        {/* Logo */}
+        <div className="p-6 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-button">
+              <Leaf className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg text-foreground">Chef AI</h1>
+              <p className="text-xs text-muted-foreground">Receitas inteligentes</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <li key={tab.id}>
+                  <button
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all",
+                      isActive 
+                        ? "bg-primary text-primary-foreground shadow-button" 
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{tab.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-border">
+          <p className="text-xs text-muted-foreground text-center">
+            © 2026 Chef AI
+          </p>
+        </div>
+      </aside>
+
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 pb-24 max-w-lg mx-auto w-full">
-        {renderContent()}
+      <main className="flex-1 lg:ml-72">
+        <div className="px-4 py-6 pb-28 lg:pb-8 max-w-2xl mx-auto">
+          {renderContent()}
+        </div>
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border px-4 py-2 pb-safe">
-        <div className="max-w-lg mx-auto flex justify-around">
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border px-2 py-2 pb-safe">
+        <div className="max-w-md mx-auto flex justify-around">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -112,12 +154,22 @@ const Index = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200",
-                  isActive ? "text-foreground" : "text-muted-foreground"
+                  "flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200",
+                  isActive 
+                    ? "bg-primary/10" 
+                    : "text-muted-foreground"
                 )}
               >
-                <Icon className={cn("w-6 h-6", isActive && "text-chef-dark")} />
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <Icon className={cn(
+                  "w-6 h-6 transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )} />
+                <span className={cn(
+                  "text-[10px] font-semibold transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}
