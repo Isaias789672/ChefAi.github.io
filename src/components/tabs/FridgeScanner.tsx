@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { ImageDropzone } from "@/components/ui/ImageDropzone";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { RecipeCard, Recipe } from "@/components/ui/RecipeCard";
+import { analyzeImage } from "@/lib/api/analyzeImage";
+import { useToast } from "@/hooks/use-toast";
 
 interface FridgeScannerProps {
   onAddToMenu: (recipe: Recipe) => void;
@@ -11,82 +13,86 @@ interface FridgeScannerProps {
 type LoadingStep = { id: string; text: string; status: "pending" | "active" | "completed" };
 
 const LOADING_STEPS: LoadingStep[] = [
-  { id: "1", text: "Identificando ingredientes...", status: "pending" },
-  { id: "2", text: "Analisando combinações...", status: "pending" },
-  { id: "3", text: "Buscando temperos ideais...", status: "pending" },
-  { id: "4", text: "Gerando receita completa...", status: "pending" },
+  { id: "1", text: "Enviando imagem para análise...", status: "pending" },
+  { id: "2", text: "Identificando ingredientes com IA...", status: "pending" },
+  { id: "3", text: "Buscando combinações ideais...", status: "pending" },
+  { id: "4", text: "Gerando receita personalizada...", status: "pending" },
 ];
 
 export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
   const [loadingSteps, setLoadingSteps] = useState(LOADING_STEPS);
   const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
 
-  const simulateLoading = async () => {
-    const stepDelay = 800;
-    
-    for (let i = 0; i < LOADING_STEPS.length; i++) {
-      // Set current step to active
-      setLoadingSteps(prev => prev.map((step, idx) => ({
-        ...step,
-        status: idx < i ? "completed" : idx === i ? "active" : "pending"
-      })));
-      setProgress(((i + 0.5) / LOADING_STEPS.length) * 100);
-      
-      await new Promise(resolve => setTimeout(resolve, stepDelay));
-      
-      // Complete current step
-      setLoadingSteps(prev => prev.map((step, idx) => ({
-        ...step,
-        status: idx <= i ? "completed" : idx === i + 1 ? "active" : "pending"
-      })));
-      setProgress(((i + 1) / LOADING_STEPS.length) * 100);
-    }
+  const updateStep = (stepIndex: number, status: "active" | "completed") => {
+    setLoadingSteps(prev => prev.map((step, idx) => ({
+      ...step,
+      status: idx < stepIndex ? "completed" : idx === stepIndex ? status : "pending"
+    })));
+    setProgress(((stepIndex + (status === "completed" ? 1 : 0.5)) / LOADING_STEPS.length) * 100);
   };
 
   const handleImageSelect = async (file: File) => {
     setUploadedImage(URL.createObjectURL(file));
     setIsAnalyzing(true);
     setGeneratedRecipe(null);
-    setLoadingSteps(LOADING_STEPS);
+    setDetectedIngredients([]);
+    setLoadingSteps(LOADING_STEPS.map(s => ({ ...s, status: "pending" as const })));
     setProgress(0);
     
-    await simulateLoading();
+    // Step 1: Uploading
+    updateStep(0, "active");
+    await new Promise(resolve => setTimeout(resolve, 500));
+    updateStep(0, "completed");
     
-    const mockRecipe: Recipe = {
-      id: crypto.randomUUID(),
-      name: "Salada Caesar Mediterrânea",
-      time: "25 min",
-      difficulty: "Fácil",
-      servings: 2,
-      calories: 380,
-      ingredients: [
-        "200g de alface romana fresca",
-        "100g de parmesão ralado",
-        "150g de tomate cereja",
-        "80g de croutons artesanais",
-        "4 colheres de molho Caesar",
-        "Azeite extra virgem a gosto"
-      ],
-      steps: [
-        "Lave e seque bem as folhas de alface romana, rasgando em pedaços médios.",
-        "Corte os tomates cereja ao meio e reserve.",
-        "Em uma tigela grande, misture a alface, tomates e croutons.",
-        "Regue com o molho Caesar e misture delicadamente.",
-        "Finalize com parmesão ralado generosamente por cima e um fio de azeite."
-      ]
-    };
+    // Step 2: Identifying
+    updateStep(1, "active");
     
-    setGeneratedRecipe(mockRecipe);
+    // Call AI API
+    const result = await analyzeImage(file, "fridge");
+    
+    if (result.error) {
+      toast({
+        title: "Erro na análise",
+        description: result.error,
+        variant: "destructive",
+      });
+      setIsAnalyzing(false);
+      setUploadedImage(null);
+      return;
+    }
+    
+    updateStep(1, "completed");
+    
+    // Step 3: Combining
+    updateStep(2, "active");
+    await new Promise(resolve => setTimeout(resolve, 400));
+    updateStep(2, "completed");
+    
+    // Step 4: Generating
+    updateStep(3, "active");
+    await new Promise(resolve => setTimeout(resolve, 400));
+    updateStep(3, "completed");
+    
+    if (result.recipe) {
+      setGeneratedRecipe(result.recipe);
+      if (result.ingredients) {
+        setDetectedIngredients(result.ingredients);
+      }
+    }
+    
     setIsAnalyzing(false);
   };
 
   const handleReset = () => {
     setGeneratedRecipe(null);
     setUploadedImage(null);
-    setLoadingSteps(LOADING_STEPS);
+    setDetectedIngredients([]);
+    setLoadingSteps(LOADING_STEPS.map(s => ({ ...s, status: "pending" as const })));
     setProgress(0);
   };
 
@@ -96,7 +102,7 @@ export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Scanner de Geladeira</h1>
         <p className="text-muted-foreground mt-1">
-          Fotografe seus ingredientes e receba uma receita personalizada
+          Fotografe seus ingredientes e a IA criará uma receita personalizada
         </p>
       </div>
 
@@ -104,7 +110,7 @@ export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
         <ImageDropzone 
           onImageSelect={handleImageSelect}
           title="Fotografe seus ingredientes"
-          subtitle="Faremos mágica com o que você tem"
+          subtitle="A IA vai analisar e criar uma receita"
         />
       )}
 
@@ -121,7 +127,7 @@ export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <span className="inline-block px-3 py-1 bg-white/90 rounded-full text-sm font-medium text-foreground">
-                  Analisando imagem...
+                  🤖 Analisando com IA...
                 </span>
               </div>
             </div>
@@ -144,12 +150,30 @@ export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
 
           {/* Uploaded Image */}
           {uploadedImage && (
-            <div className="rounded-3xl overflow-hidden aspect-video">
+            <div className="rounded-3xl overflow-hidden aspect-video relative">
               <img 
                 src={uploadedImage} 
                 alt="Ingredientes" 
                 className="w-full h-full object-cover"
               />
+              {/* Detected ingredients overlay */}
+              {detectedIngredients.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <p className="text-white/80 text-xs mb-2">Ingredientes detectados:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {detectedIngredients.slice(0, 6).map((ing, i) => (
+                      <span key={i} className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs">
+                        {ing}
+                      </span>
+                    ))}
+                    {detectedIngredients.length > 6 && (
+                      <span className="px-2 py-1 bg-primary/80 rounded-full text-white text-xs">
+                        +{detectedIngredients.length - 6}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
