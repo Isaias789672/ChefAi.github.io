@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingCart, Check, Plus, Trash2 } from "lucide-react";
+import { ShoppingCart, Check, Plus, Trash2, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Recipe } from "@/components/ui/RecipeCard";
 
@@ -11,22 +11,24 @@ interface ShoppingItem {
   id: string;
   name: string;
   checked: boolean;
-  quantity?: string;
-  fromRecipe: string;
 }
 
 export function ShoppingList({ recipes }: ShoppingListProps) {
   const [items, setItems] = useState<ShoppingItem[]>(() => {
     const allIngredients: ShoppingItem[] = [];
+    const seen = new Set<string>();
+    
     recipes.forEach((recipe) => {
       recipe.ingredients.forEach((ingredient) => {
-        allIngredients.push({
-          id: crypto.randomUUID(),
-          name: ingredient.split('•')[0].trim(),
-          quantity: ingredient.split('•')[1]?.trim(),
-          checked: false,
-          fromRecipe: recipe.name,
-        });
+        const name = ingredient.split('•')[0].trim();
+        if (!seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          allIngredients.push({
+            id: crypto.randomUUID(),
+            name,
+            checked: false,
+          });
+        }
       });
     });
     return allIngredients;
@@ -49,13 +51,12 @@ export function ShoppingList({ recipes }: ShoppingListProps) {
   const addItem = () => {
     if (newItem.trim()) {
       setItems((prev) => [
-        ...prev,
         {
           id: crypto.randomUUID(),
           name: newItem.trim(),
           checked: false,
-          fromRecipe: "Adicionado manualmente",
         },
+        ...prev,
       ]);
       setNewItem("");
     }
@@ -65,113 +66,82 @@ export function ShoppingList({ recipes }: ShoppingListProps) {
   const checkedItems = items.filter((item) => item.checked);
 
   return (
-    <div className="slide-up space-y-4">
-      {/* Header card */}
-      <div className="bg-card rounded-2xl p-5 shadow-card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-chef-dark flex items-center justify-center shadow-button">
-              <ShoppingCart className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="font-bold text-foreground">Lista de Compras</h2>
-              <p className="text-sm text-muted-foreground">
-                {uncheckedItems.length} itens pendentes
-              </p>
-            </div>
-          </div>
-          <div className="bg-muted px-3 py-1.5 rounded-full">
-            <span className="text-sm font-medium">{items.length} total</span>
-          </div>
-        </div>
+    <div className="page-enter">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Lista de Compras</h1>
+        <p className="text-muted-foreground mt-1">
+          Ingredientes das suas receitas salvas
+        </p>
+      </div>
 
-        {/* Add item input */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && addItem()}
-            placeholder="Adicionar item..."
-            className="flex-1 px-4 py-3 rounded-xl bg-muted border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-chef-dark text-sm"
-          />
-          <button
-            onClick={addItem}
-            className="px-4 py-3 rounded-xl bg-chef-dark text-white shadow-button hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+      {/* Stats Card */}
+      <div className="bg-card rounded-3xl p-5 shadow-card mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <ShoppingCart className="w-7 h-7 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-2xl font-bold text-foreground">{uncheckedItems.length}</p>
+            <p className="text-sm text-muted-foreground">itens pendentes</p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-semibold text-success">{checkedItems.length}</p>
+            <p className="text-sm text-muted-foreground">comprados</p>
+          </div>
         </div>
       </div>
 
+      {/* Add Item Input */}
+      <div className="flex gap-3 mb-6">
+        <input
+          type="text"
+          value={newItem}
+          onChange={(e) => setNewItem(e.target.value)}
+          onKeyPress={(e) => e.key === "Enter" && addItem()}
+          placeholder="Adicionar item..."
+          className="flex-1 px-5 py-4 rounded-2xl bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+        />
+        <button
+          onClick={addItem}
+          className="px-5 py-4 rounded-2xl bg-primary text-primary-foreground shadow-button hover:opacity-90 transition-all active:scale-[0.98]"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
+
       {items.length === 0 ? (
-        <div className="bg-card rounded-2xl p-8 shadow-card text-center">
-          <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-            <ShoppingCart className="w-7 h-7 text-muted-foreground" />
+        <div className="bg-card rounded-3xl p-8 shadow-card text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+            <Package className="w-8 h-8 text-primary" />
           </div>
-          <p className="text-muted-foreground mb-1">Sua lista está vazia</p>
+          <h3 className="font-semibold text-foreground mb-2">Lista vazia</h3>
           <p className="text-sm text-muted-foreground">
-            Adicione receitas ao menu para gerar a lista
+            Adicione receitas ao menu para gerar sua lista
           </p>
         </div>
       ) : (
-        <>
-          {/* Unchecked Items */}
+        <div className="space-y-4">
+          {/* Pending Items */}
           {uncheckedItems.length > 0 && (
-            <div className="bg-card rounded-2xl p-4 shadow-card space-y-1">
-              {uncheckedItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-xl group hover:bg-muted transition-colors",
-                    index !== uncheckedItems.length - 1 && "border-b border-border"
-                  )}
-                >
-                  <button
-                    onClick={() => toggleItem(item.id)}
-                    className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 hover:border-chef-dark transition-colors flex items-center justify-center flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm truncate">{item.name}</p>
-                    {item.quantity && (
-                      <p className="text-xs text-muted-foreground">{item.quantity}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => deleteItem(item.id)}
-                    className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Checked Items */}
-          {checkedItems.length > 0 && (
-            <div className="bg-card rounded-2xl p-4 shadow-card">
-              <h4 className="text-sm font-medium text-muted-foreground mb-2 px-2">
-                Comprados ({checkedItems.length})
-              </h4>
-              <div className="space-y-1">
-                {checkedItems.map((item) => (
+            <div className="bg-card rounded-3xl shadow-card overflow-hidden">
+              <div className="p-4 border-b border-border">
+                <h3 className="font-semibold text-foreground">A comprar</h3>
+              </div>
+              <div className="divide-y divide-border">
+                {uncheckedItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 p-3 rounded-xl group hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 p-4 group hover:bg-accent/50 transition-colors"
                   >
                     <button
                       onClick={() => toggleItem(item.id)}
-                      className="w-6 h-6 rounded-full bg-chef-dark flex items-center justify-center flex-shrink-0"
-                    >
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </button>
-                    <p className="flex-1 text-sm text-muted-foreground line-through truncate">
-                      {item.name}
-                    </p>
+                      className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 hover:border-primary transition-colors flex items-center justify-center flex-shrink-0"
+                    />
+                    <span className="flex-1 font-medium text-foreground">{item.name}</span>
                     <button
                       onClick={() => deleteItem(item.id)}
-                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-2 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -180,7 +150,42 @@ export function ShoppingList({ recipes }: ShoppingListProps) {
               </div>
             </div>
           )}
-        </>
+
+          {/* Checked Items */}
+          {checkedItems.length > 0 && (
+            <div className="bg-card rounded-3xl shadow-card overflow-hidden">
+              <div className="p-4 border-b border-border">
+                <h3 className="font-semibold text-muted-foreground">
+                  Comprados ({checkedItems.length})
+                </h3>
+              </div>
+              <div className="divide-y divide-border">
+                {checkedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-4 p-4 group hover:bg-accent/50 transition-colors"
+                  >
+                    <button
+                      onClick={() => toggleItem(item.id)}
+                      className="w-6 h-6 rounded-full bg-success flex items-center justify-center flex-shrink-0"
+                    >
+                      <Check className="w-3.5 h-3.5 text-success-foreground" />
+                    </button>
+                    <span className="flex-1 text-muted-foreground line-through">
+                      {item.name}
+                    </span>
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="p-2 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

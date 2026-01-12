@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { CalendarDays, Plus, Flame } from "lucide-react";
+import { Calendar, Plus, ChefHat } from "lucide-react";
 import { RecipeCard, Recipe } from "@/components/ui/RecipeCard";
-import { CircularProgress } from "@/components/ui/CircularProgress";
+import { cn } from "@/lib/utils";
 
 interface WeeklyMenuProps {
   recipes: Recipe[];
@@ -9,17 +9,17 @@ interface WeeklyMenuProps {
 }
 
 const DAYS = [
-  { short: "Dom", num: 10 },
-  { short: "Seg", num: 11 },
-  { short: "Ter", num: 12 },
-  { short: "Qua", num: 13 },
-  { short: "Qui", num: 14 },
-  { short: "Sex", num: 15 },
-  { short: "Sáb", num: 16 },
+  { short: "D", name: "Domingo", num: 12 },
+  { short: "S", name: "Segunda", num: 13 },
+  { short: "T", name: "Terça", num: 14 },
+  { short: "Q", name: "Quarta", num: 15 },
+  { short: "Q", name: "Quinta", num: 16 },
+  { short: "S", name: "Sexta", num: 17 },
+  { short: "S", name: "Sábado", num: 18 },
 ];
 
 export function WeeklyMenu({ recipes, onRemoveRecipe }: WeeklyMenuProps) {
-  const [selectedDay, setSelectedDay] = useState(3); // Wednesday
+  const [selectedDay, setSelectedDay] = useState(3);
 
   // Mock data for demonstration
   const menuByDay: { [key: number]: Recipe[] } = {
@@ -33,166 +33,113 @@ export function WeeklyMenu({ recipes, onRemoveRecipe }: WeeklyMenuProps) {
   };
 
   const dayRecipes = menuByDay[selectedDay] || [];
-  
-  // Calculate daily totals
-  const dailyCalories = dayRecipes.reduce((sum, r) => sum + (r.calories || 0), 0);
-  const dailyProtein = dayRecipes.reduce((sum, r) => sum + (r.protein || 0), 0);
-  const dailyCarbs = dayRecipes.reduce((sum, r) => sum + (r.carbs || 0), 0);
-  const dailyFats = dayRecipes.reduce((sum, r) => sum + (r.fats || 0), 0);
-
-  const calorieGoal = 2500;
-  const proteinGoal = 150;
-  const carbsGoal = 275;
-  const fatsGoal = 70;
 
   return (
-    <div className="slide-up space-y-4">
-      {/* Header card */}
-      <div className="bg-card rounded-2xl p-5 shadow-card">
-        {/* Logo and streak */}
+    <div className="page-enter">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Menu Semanal</h1>
+        <p className="text-muted-foreground mt-1">
+          Organize suas refeições da semana
+        </p>
+      </div>
+
+      {/* Day Selector Card */}
+      <div className="bg-card rounded-3xl p-5 shadow-card mb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🍳</span>
-            <span className="font-bold text-foreground">Chef AI</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full">
-            <span className="text-sm">🔥</span>
-            <span className="text-sm font-medium">15</span>
-          </div>
+          <h3 className="font-semibold text-foreground">Janeiro 2026</h3>
+          <Calendar className="w-5 h-5 text-muted-foreground" />
         </div>
 
-        {/* Day selector */}
-        <div className="flex justify-between mb-6">
-          {DAYS.map((day, i) => (
-            <button
-              key={i}
-              onClick={() => setSelectedDay(i)}
-              className="flex flex-col items-center gap-1"
-            >
-              <span className={`text-xs ${selectedDay === i ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                {day.short}
-              </span>
-              <div className={`day-circle ${
-                selectedDay === i 
-                  ? 'day-circle-active' 
-                  : i < selectedDay 
-                    ? 'border-2 border-success text-success' 
-                    : 'day-circle-inactive border-2 border-muted'
-              }`}>
-                {day.num}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* Calories progress */}
-        <div className="bg-muted rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-4xl font-bold text-foreground">
-              {dailyCalories}<span className="text-lg text-muted-foreground font-normal">/{calorieGoal}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">Calorias consumidas</p>
-          </div>
-          <CircularProgress 
-            value={dailyCalories} 
-            max={calorieGoal} 
-            size={72} 
-            strokeWidth={6}
-          >
-            <Flame className="w-5 h-5 text-foreground" />
-          </CircularProgress>
-        </div>
-
-        {/* Macro progress */}
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="text-center">
-            <p className="text-lg font-bold text-foreground">
-              {dailyProtein}<span className="text-xs text-muted-foreground font-normal">/{proteinGoal}g</span>
-            </p>
-            <p className="text-xs text-muted-foreground mb-2">Proteína</p>
-            <CircularProgress 
-              value={dailyProtein} 
-              max={proteinGoal} 
-              size={48} 
-              strokeWidth={4}
-              color="hsl(var(--protein))"
-            >
-              <span className="text-xs">🥩</span>
-            </CircularProgress>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-foreground">
-              {dailyCarbs}<span className="text-xs text-muted-foreground font-normal">/{carbsGoal}g</span>
-            </p>
-            <p className="text-xs text-muted-foreground mb-2">Carbos</p>
-            <CircularProgress 
-              value={dailyCarbs} 
-              max={carbsGoal} 
-              size={48} 
-              strokeWidth={4}
-              color="hsl(var(--carbs))"
-            >
-              <span className="text-xs">🌾</span>
-            </CircularProgress>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-bold text-foreground">
-              {dailyFats}<span className="text-xs text-muted-foreground font-normal">/{fatsGoal}g</span>
-            </p>
-            <p className="text-xs text-muted-foreground mb-2">Gorduras</p>
-            <CircularProgress 
-              value={dailyFats} 
-              max={fatsGoal} 
-              size={48} 
-              strokeWidth={4}
-              color="hsl(var(--fats))"
-            >
-              <span className="text-xs">💧</span>
-            </CircularProgress>
-          </div>
-        </div>
-
-        {/* Pagination dots */}
-        <div className="flex justify-center gap-1.5 mt-4">
-          <div className="w-2 h-2 rounded-full bg-chef-dark" />
-          <div className="w-2 h-2 rounded-full bg-muted" />
-          <div className="w-2 h-2 rounded-full bg-muted" />
+        {/* Days Grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {DAYS.map((day, i) => {
+            const hasRecipes = (menuByDay[i] || []).length > 0;
+            const isSelected = selectedDay === i;
+            
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedDay(i)}
+                className="flex flex-col items-center gap-1 py-2"
+              >
+                <span className={cn(
+                  "text-xs font-medium",
+                  isSelected ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {day.short}
+                </span>
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all",
+                  isSelected 
+                    ? "bg-primary text-primary-foreground shadow-button" 
+                    : hasRecipes 
+                      ? "bg-primary/10 text-primary" 
+                      : "bg-muted text-muted-foreground"
+                )}>
+                  {day.num}
+                </div>
+                {/* Indicator dot */}
+                {hasRecipes && (
+                  <div className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    isSelected ? "bg-primary" : "bg-primary/50"
+                  )} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Recently uploaded / Day recipes */}
-      <div className="bg-card rounded-2xl p-5 shadow-card">
-        <h3 className="font-semibold text-foreground mb-4">Refeições do dia</h3>
-        
-        {dayRecipes.length === 0 ? (
-          <div className="py-8 text-center">
-            <div className="w-14 h-14 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
-              <CalendarDays className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">Nenhuma refeição planejada</p>
-            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-chef-dark text-white text-sm font-medium shadow-button">
-              <Plus className="w-4 h-4" />
-              Adicionar
-            </button>
+      {/* Selected Day Title */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-foreground">
+          {DAYS[selectedDay].name}, {DAYS[selectedDay].num}
+        </h2>
+        <span className="text-sm text-muted-foreground">
+          {dayRecipes.length} {dayRecipes.length === 1 ? "receita" : "receitas"}
+        </span>
+      </div>
+
+      {/* Recipes List */}
+      {dayRecipes.length === 0 ? (
+        <div className="bg-card rounded-3xl p-8 shadow-card text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+            <ChefHat className="w-8 h-8 text-primary" />
           </div>
-        ) : (
-          <div className="space-y-3">
-            {dayRecipes.map((recipe) => (
+          <h3 className="font-semibold text-foreground mb-2">Nenhuma refeição planejada</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Adicione receitas do Scanner ou Descobrir Prato
+          </p>
+          <button className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-xl font-medium shadow-button hover:opacity-90 transition-opacity">
+            <Plus className="w-5 h-5" />
+            Adicionar receita
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {dayRecipes.map((recipe, index) => (
+            <div 
+              key={recipe.id} 
+              className="stagger-item"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
               <RecipeCard
-                key={recipe.id}
                 recipe={recipe}
                 compact
                 onDelete={() => onRemoveRecipe(recipe.id)}
               />
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
 
-      {/* Floating add button */}
-      <button className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-chef-dark text-white shadow-button flex items-center justify-center hover:scale-105 transition-transform">
-        <Plus className="w-6 h-6" />
-      </button>
+          {/* Add More Button */}
+          <button className="w-full py-4 border-2 border-dashed border-border rounded-2xl text-muted-foreground font-medium hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
+            <Plus className="w-5 h-5" />
+            Adicionar mais
+          </button>
+        </div>
+      )}
     </div>
   );
 }

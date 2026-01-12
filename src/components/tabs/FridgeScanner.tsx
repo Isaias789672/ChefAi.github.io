@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Refrigerator } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
 import { ImageDropzone } from "@/components/ui/ImageDropzone";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { RecipeCard, Recipe } from "@/components/ui/RecipeCard";
@@ -8,49 +8,74 @@ interface FridgeScannerProps {
   onAddToMenu: (recipe: Recipe) => void;
 }
 
-interface DetectedIngredient {
-  name: string;
-  position: { top: string; left: string };
-}
+type LoadingStep = { id: string; text: string; status: "pending" | "active" | "completed" };
+
+const LOADING_STEPS: LoadingStep[] = [
+  { id: "1", text: "Identificando ingredientes...", status: "pending" },
+  { id: "2", text: "Analisando combinações...", status: "pending" },
+  { id: "3", text: "Buscando temperos ideais...", status: "pending" },
+  { id: "4", text: "Gerando receita completa...", status: "pending" },
+];
 
 export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
-  const [detectedIngredients, setDetectedIngredients] = useState<DetectedIngredient[]>([]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [loadingSteps, setLoadingSteps] = useState(LOADING_STEPS);
+  const [progress, setProgress] = useState(0);
+
+  const simulateLoading = async () => {
+    const stepDelay = 800;
+    
+    for (let i = 0; i < LOADING_STEPS.length; i++) {
+      // Set current step to active
+      setLoadingSteps(prev => prev.map((step, idx) => ({
+        ...step,
+        status: idx < i ? "completed" : idx === i ? "active" : "pending"
+      })));
+      setProgress(((i + 0.5) / LOADING_STEPS.length) * 100);
+      
+      await new Promise(resolve => setTimeout(resolve, stepDelay));
+      
+      // Complete current step
+      setLoadingSteps(prev => prev.map((step, idx) => ({
+        ...step,
+        status: idx <= i ? "completed" : idx === i + 1 ? "active" : "pending"
+      })));
+      setProgress(((i + 1) / LOADING_STEPS.length) * 100);
+    }
+  };
 
   const handleImageSelect = async (file: File) => {
     setUploadedImage(URL.createObjectURL(file));
     setIsAnalyzing(true);
     setGeneratedRecipe(null);
+    setLoadingSteps(LOADING_STEPS);
+    setProgress(0);
     
-    // Simulating AI analysis
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    const mockIngredients: DetectedIngredient[] = [
-      { name: "Alface", position: { top: "25%", left: "15%" } },
-      { name: "Parmesão", position: { top: "35%", left: "75%" } },
-      { name: "Tomate Cereja", position: { top: "65%", left: "20%" } },
-      { name: "Croutons", position: { top: "60%", left: "70%" } },
-    ];
-    setDetectedIngredients(mockIngredients);
+    await simulateLoading();
     
     const mockRecipe: Recipe = {
       id: crypto.randomUUID(),
-      name: "Salada Caesar com Tomate Cereja",
+      name: "Salada Caesar Mediterrânea",
       time: "25 min",
       difficulty: "Fácil",
       servings: 2,
-      calories: 330,
-      protein: 8,
-      carbs: 20,
-      fats: 18,
-      ingredients: ["Alface", "Parmesão", "Tomate Cereja", "Croutons", "Molho Caesar"],
+      calories: 380,
+      ingredients: [
+        "200g de alface romana fresca",
+        "100g de parmesão ralado",
+        "150g de tomate cereja",
+        "80g de croutons artesanais",
+        "4 colheres de molho Caesar",
+        "Azeite extra virgem a gosto"
+      ],
       steps: [
-        "Lave e seque bem a alface, rasgando em pedaços.",
-        "Corte os tomates cereja ao meio.",
-        "Monte a salada com alface, tomates e croutons.",
-        "Regue com molho Caesar e finalize com parmesão ralado."
+        "Lave e seque bem as folhas de alface romana, rasgando em pedaços médios.",
+        "Corte os tomates cereja ao meio e reserve.",
+        "Em uma tigela grande, misture a alface, tomates e croutons.",
+        "Regue com o molho Caesar e misture delicadamente.",
+        "Finalize com parmesão ralado generosamente por cima e um fio de azeite."
       ]
     };
     
@@ -60,105 +85,79 @@ export function FridgeScanner({ onAddToMenu }: FridgeScannerProps) {
 
   const handleReset = () => {
     setGeneratedRecipe(null);
-    setDetectedIngredients([]);
     setUploadedImage(null);
+    setLoadingSteps(LOADING_STEPS);
+    setProgress(0);
   };
 
   return (
-    <div className="slide-up">
-      {!generatedRecipe && !isAnalyzing && (
-        <ImageDropzone onImageSelect={handleImageSelect} />
-      )}
+    <div className="page-enter">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Scanner de Geladeira</h1>
+        <p className="text-muted-foreground mt-1">
+          Fotografe seus ingredientes e receba uma receita personalizada
+        </p>
+      </div>
 
-      {isAnalyzing && (
-        <LoadingState 
-          message="Identificando ingredientes..."
-          submessage="Analisando sua foto com IA"
+      {!generatedRecipe && !isAnalyzing && (
+        <ImageDropzone 
+          onImageSelect={handleImageSelect}
+          title="Fotografe seus ingredientes"
+          subtitle="Faremos mágica com o que você tem"
         />
       )}
 
-      {generatedRecipe && !isAnalyzing && (
-        <div className="space-y-4 fade-in">
-          {/* Detected image with floating labels */}
+      {isAnalyzing && (
+        <div className="space-y-6 fade-in">
+          {/* Uploaded Image Preview */}
           {uploadedImage && (
-            <div className="relative rounded-[2rem] overflow-hidden bg-chef-dark">
+            <div className="relative rounded-3xl overflow-hidden aspect-video">
               <img 
                 src={uploadedImage} 
                 alt="Ingredientes" 
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full h-full object-cover"
               />
-              
-              {/* Header overlay */}
-              <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
-                <button
-                  onClick={handleReset}
-                  className="w-10 h-10 rounded-full bg-foreground/30 backdrop-blur-sm flex items-center justify-center text-white"
-                >
-                  ×
-                </button>
-                <div className="px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm flex items-center gap-2">
-                  <span className="text-sm">🍳</span>
-                  <span className="font-semibold text-chef-dark text-sm">Chef AI</span>
-                </div>
-                <button className="w-10 h-10 rounded-full bg-foreground/30 backdrop-blur-sm flex items-center justify-center text-white">
-                  ?
-                </button>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <span className="inline-block px-3 py-1 bg-white/90 rounded-full text-sm font-medium text-foreground">
+                  Analisando imagem...
+                </span>
               </div>
-
-              {/* Floating ingredient labels */}
-              {detectedIngredients.map((ingredient, i) => (
-                <div
-                  key={i}
-                  className="floating-label"
-                  style={{ 
-                    top: ingredient.position.top, 
-                    left: ingredient.position.left,
-                    animationDelay: `${i * 0.15}s`
-                  }}
-                >
-                  {ingredient.name}
-                </div>
-              ))}
             </div>
           )}
 
-          {/* Recipe result */}
+          <LoadingState steps={loadingSteps} progress={progress} />
+        </div>
+      )}
+
+      {generatedRecipe && !isAnalyzing && (
+        <div className="space-y-6 fade-in">
+          {/* Back Button */}
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Nova análise</span>
+          </button>
+
+          {/* Uploaded Image */}
+          {uploadedImage && (
+            <div className="rounded-3xl overflow-hidden aspect-video">
+              <img 
+                src={uploadedImage} 
+                alt="Ingredientes" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {/* Recipe Card */}
           <RecipeCard 
             recipe={generatedRecipe}
             onAddToMenu={() => onAddToMenu(generatedRecipe)}
           />
-
-          {/* Steps */}
-          <div className="bg-card rounded-2xl p-4 shadow-card">
-            <h4 className="font-semibold text-foreground mb-4">Ingredientes</h4>
-            <div className="space-y-2 mb-6">
-              {generatedRecipe.ingredients.map((ing, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <span className="text-sm text-foreground">{ing}</span>
-                  <span className="text-xs text-muted-foreground">+ Adicionar</span>
-                </div>
-              ))}
-            </div>
-
-            <h4 className="font-semibold text-foreground mb-4">Modo de Preparo</h4>
-            <ol className="space-y-3">
-              {generatedRecipe.steps.map((step, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-chef-dark text-white text-sm font-medium flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm text-muted-foreground pt-0.5">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <button
-            onClick={handleReset}
-            className="w-full py-3 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
-          >
-            Escanear novamente
-          </button>
         </div>
       )}
     </div>
