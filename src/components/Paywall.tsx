@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { Sparkles, Camera, Utensils, CalendarCheck, ShoppingBag, Check } from "lucide-react";
+import { Sparkles, Camera, Utensils, CalendarCheck, ShoppingBag, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import chefImage from "@/assets/chef-scanning.jpg";
+import { checkSubscription } from "@/lib/api/checkSubscription";
 
 interface PaywallProps {
   onUnlock: () => void;
@@ -9,6 +13,8 @@ interface PaywallProps {
 
 const Paywall = ({ onUnlock }: PaywallProps) => {
   const [selectedPlan, setSelectedPlan] = useState<"weekly" | "annual">("annual");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const benefits = [
     { icon: Camera, text: "Scanner de Ingredientes Ilimitado" },
@@ -17,11 +23,51 @@ const Paywall = ({ onUnlock }: PaywallProps) => {
     { icon: ShoppingBag, text: "Lista de Compras Inteligente" },
   ];
 
+  const handleCheckAccess = async () => {
+    if (!email.trim()) {
+      toast.error("Por favor, insira seu email");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const subscription = await checkSubscription(email);
+
+      if (subscription && subscription.hasAccess) {
+        localStorage.setItem("chef-ai-email", email.toLowerCase().trim());
+        localStorage.setItem("chef-ai-plan", subscription.plan);
+        toast.success(`Bem-vindo! Seu plano ${subscription.plan.toUpperCase()} está ativo.`);
+        onUnlock();
+      } else if (subscription && !subscription.hasAccess) {
+        if (subscription.status === "cancelled") {
+          toast.error("Sua assinatura foi cancelada. Por favor, renove seu plano.");
+        } else if (subscription.status === "overdue") {
+          toast.error("Sua assinatura está atrasada. Por favor, regularize o pagamento.");
+        } else {
+          toast.error("Você não possui um plano ativo. Por favor, adquira um plano.");
+        }
+      } else {
+        toast.error("Email não encontrado. Por favor, adquira um plano para acessar o ChefAI.");
+      }
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      toast.error("Erro ao verificar assinatura. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleCheckAccess();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-background overflow-auto">
       <div className="min-h-screen flex flex-col">
         {/* Hero Image Section */}
-        <div className="relative h-[45vh] min-h-[300px] overflow-hidden">
+        <div className="relative h-[40vh] min-h-[280px] overflow-hidden">
           <img
             src={chefImage}
             alt="Chef fotografando ingredientes"
@@ -40,7 +86,7 @@ const Paywall = ({ onUnlock }: PaywallProps) => {
         </div>
 
         {/* Content Section */}
-        <div className="flex-1 px-6 py-8 space-y-6">
+        <div className="flex-1 px-6 py-6 space-y-5">
           {/* Title */}
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground">Obtenha Acesso Pro</h1>
@@ -50,7 +96,7 @@ const Paywall = ({ onUnlock }: PaywallProps) => {
           </div>
 
           {/* Benefits List */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -62,7 +108,7 @@ const Paywall = ({ onUnlock }: PaywallProps) => {
           </div>
 
           {/* Pricing Plans */}
-          <div className="space-y-3 pt-4">
+          <div className="space-y-3 pt-2">
             {/* Weekly Plan */}
             <button
               onClick={() => setSelectedPlan("weekly")}
@@ -99,13 +145,44 @@ const Paywall = ({ onUnlock }: PaywallProps) => {
             </button>
           </div>
 
+          {/* Email Input */}
+          <div className="space-y-2 pt-2">
+            <Label htmlFor="email" className="text-foreground font-medium">
+              Já é assinante? Insira seu email:
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="pl-10 h-12 rounded-xl"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* CTA Button */}
           <Button
-            onClick={onUnlock}
+            onClick={handleCheckAccess}
+            disabled={loading}
             className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-button"
           >
-            <Sparkles className="w-5 h-5 mr-2" />
-            CONTINUAR
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5 mr-2" />
+                ACESSAR CHEFAI
+              </>
+            )}
           </Button>
 
           {/* Disclaimer */}
