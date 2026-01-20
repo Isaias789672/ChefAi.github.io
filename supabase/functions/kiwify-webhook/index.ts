@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const VALID_TOKEN = 'hicptshjzqo';
+const VALID_TOKENS = ['hicptshjzqo', 'm1bft6fb7oo'];
 
 // Real Kiwify webhook payload structure
 interface KiwifyWebhookPayload {
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     // Validate token - check both simple format and Kiwify format
     const receivedToken = payload.token || payload.signature;
-    if (!receivedToken || receivedToken !== VALID_TOKEN) {
+    if (!receivedToken || !VALID_TOKENS.includes(receivedToken)) {
       console.error('Invalid or missing token. Received:', receivedToken);
       return new Response(
         JSON.stringify({ error: 'Forbidden - Invalid token' }),
