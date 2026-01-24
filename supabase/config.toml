@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.kiwify-webhook]
 verify_jwt = false
+
+[functions.chat-recipe]
+verify_jwt = false
+
+[functions.generate-recipe]
+verify_jwt = false
+
+[functions.analyze-missing-ingredients]
+verify_jwt = false
