@@ -16,4 +16,4 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
-default defineConfig(({ mode }) => ({base: '/chef-ai-recipes/',
+export default defineConfig(({ mode }) => ({base: '/chef-ai-recipes/',
