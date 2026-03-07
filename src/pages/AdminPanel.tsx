@@ -47,7 +47,7 @@ const AdminPanel = () => {
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
 
-  const webhookUrl = `https://zujoihliuwbjcfszbcbd.supabase.co/functions/v1/kiwify-webhook`;
+  const webhookUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/kiwify-webhook`;
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
@@ -80,29 +80,25 @@ const AdminPanel = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const { data: result, error } = await supabase.functions.invoke("kiwify-webhook", {
+        body: {
           email,
           evento,
           produto,
           token: "hicptshjzqo",
-        }),
+        },
       });
 
-      const result = await response.json();
+      if (error) throw error;
 
-      if (response.ok) {
+      if (result?.success) {
         toast.success(`Webhook simulado com sucesso! Plano aplicado: ${result.data?.plano_aplicado}`);
         fetchLogs();
         setEmail("");
         setEvento("");
         setProduto("");
       } else {
-        toast.error(`Erro: ${result.error}`);
+        toast.error(`Erro: ${result?.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
       console.error("Error simulating webhook:", error);
