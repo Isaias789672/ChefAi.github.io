@@ -47,7 +47,7 @@ const AdminPanel = () => {
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
 
-  const webhookUrl = `https://zujoihliuwbjcfszbcbd.supabase.co/functions/v1/kiwify-webhook`;
+  const webhookUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/kiwify-webhook`;
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
