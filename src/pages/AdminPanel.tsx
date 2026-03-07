@@ -91,14 +91,14 @@ const AdminPanel = () => {
 
       if (error) throw error;
 
-      if (response.ok) {
+      if (result?.success) {
         toast.success(`Webhook simulado com sucesso! Plano aplicado: ${result.data?.plano_aplicado}`);
         fetchLogs();
         setEmail("");
         setEvento("");
         setProduto("");
       } else {
-        toast.error(`Erro: ${result.error}`);
+        toast.error(`Erro: ${result?.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
       console.error("Error simulating webhook:", error);
