@@ -80,20 +80,16 @@ const AdminPanel = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const { data: result, error } = await supabase.functions.invoke("kiwify-webhook", {
+        body: {
           email,
           evento,
           produto,
           token: "hicptshjzqo",
-        }),
+        },
       });
 
-      const result = await response.json();
+      if (error) throw error;
 
       if (response.ok) {
         toast.success(`Webhook simulado com sucesso! Plano aplicado: ${result.data?.plano_aplicado}`);
